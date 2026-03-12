@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class BooksService {
@@ -7,6 +7,10 @@ export class BooksService {
     { id: 2, title: 'To Kill a Mockingbird', author: 'Harper Lee' },
     { id: 3, title: '1984', author: 'George Orwell' },
   ];
+
+  constructor(@Inject('CONFIG') private config: any) {
+    console.log('Config:', this.config);
+  }
 
   findAll() {
     return this.books;

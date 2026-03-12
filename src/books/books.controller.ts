@@ -1,9 +1,15 @@
-import { Controller, Delete, Get, Patch, Post } from '@nestjs/common';
+import { Controller, Delete, Get, Inject, Patch } from '@nestjs/common';
 import { BooksService } from './books.service';
+import { type Logger } from './logger.service';
 
 @Controller('books')
 export class BooksController {
-  constructor(private readonly booksService: BooksService) {}
+  constructor(
+    private readonly booksService: BooksService,
+    @Inject('LOGGER') private readonly booksLogger: Logger,
+  ) {
+    booksLogger.log('BooksController initialized');
+  }
 
   @Get()
   findAll() {
