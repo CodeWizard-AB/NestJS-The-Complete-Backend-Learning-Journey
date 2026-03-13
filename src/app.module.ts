@@ -2,6 +2,8 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerMiddlware } from './middlewares/logger.middleware';
+import { cors } from './middlewares/cors.middleware';
+import { rateLimit } from './middlewares/rate-limit.middleware';
 
 @Module({
   imports: [],
@@ -10,6 +12,9 @@ import { LoggerMiddlware } from './middlewares/logger.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddlware).exclude('auth/login').forRoutes('*');
+    consumer
+      .apply(rateLimit(5, 1000 * 60), LoggerMiddlware, cors)
+      .exclude('auth/login')
+      .forRoutes('*');
   }
 }
