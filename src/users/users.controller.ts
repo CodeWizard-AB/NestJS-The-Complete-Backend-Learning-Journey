@@ -1,0 +1,51 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+} from '@nestjs/common';
+import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { LoggingInterceptor } from './interceptors/logger.interceptor';
+import { ResponseTransformInterceptor } from './interceptors/response-transform.interceptor';
+import { CacheInterceptor } from './interceptors/cache.interceptor';
+import { CacheKey, CacheTTL } from './decorators/cache.decorator';
+
+@Controller('users')
+@UseInterceptors(LoggingInterceptor, ResponseTransformInterceptor)
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  create(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
+  }
+
+  @Get()
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('users:all')
+  @CacheTTL(1000 * 60 * 60)
+  findAll() {
+    return this.usersService.findAll();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(+id);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(+id, updateUserDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(+id);
+  }
+}
