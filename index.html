@@ -1,0 +1,193 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Chat Rooms</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: Arial;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      #messages {
+        border: 1px solid #ccc;
+        height: 400px;
+        overflow-y: scroll;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      .message {
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 5px;
+        background: #f0f0f0;
+      }
+      .my-message {
+        background: #d4edda;
+      }
+      .system {
+        color: gray;
+        font-style: italic;
+        background: #fff;
+      }
+      input {
+        padding: 10px;
+        margin: 5px;
+      }
+      button {
+        padding: 10px 20px;
+      }
+      #typing {
+        color: blue;
+        font-size: 12px;
+        min-height: 20px;
+      }
+      .users {
+        background: #e7f3ff;
+        padding: 10px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Chat Rooms</h1>
+
+    <div id="join-section">
+      <input id="usernameInput" type="text" placeholder="Your name" />
+      <input
+        id="roomInput"
+        type="text"
+        placeholder="Room name"
+        value="general"
+      />
+      <button onclick="joinRoom()">Join Room</button>
+    </div>
+
+    <div id="chat-section" style="display: none">
+      <div class="users">
+        <strong>Room:</strong> <span id="current-room"></span><br />
+        <strong>Online:</strong> <span id="users-list"></span>
+      </div>
+
+      <div id="messages"></div>
+      <div id="typing"></div>
+
+      <input
+        id="messageInput"
+        type="text"
+        placeholder="Type a message..."
+        onkeyup="handleTyping(event)"
+      />
+      <button onclick="sendMessage()">Send</button>
+      <button onclick="leaveRoom()">Leave Room</button>
+    </div>
+
+    <script>
+      const socket = io('http://localhost:3000');
+      let username = '';
+      let room = '';
+
+      function joinRoom() {
+        username = document.getElementById('usernameInput').value.trim();
+        room = document.getElementById('roomInput').value.trim();
+
+        if (!username || !room) {
+          return alert('Please enter both name and room');
+        }
+
+        socket.emit('join-room', { username, room });
+
+        document.getElementById('join-section').style.display = 'none';
+        document.getElementById('chat-section').style.display = 'block';
+        document.getElementById('current-room').textContent = room;
+      }
+
+      function leaveRoom() {
+        location.reload();
+      }
+
+      function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        socket.emit('send-message', { message });
+        input.value = '';
+      }
+
+      let typingTimeout;
+      function handleTyping(event) {
+        if (event.key === 'Enter') {
+          sendMessage();
+          return;
+        }
+
+        clearTimeout(typingTimeout);
+        socket.emit('typing');
+
+        typingTimeout = setTimeout(() => {
+          document.getElementById('typing').textContent = '';
+        }, 1000);
+      }
+
+      // Listen for message history
+      socket.on('message-history', (messages) => {
+        messages.forEach((msg) => displayMessage(msg, false));
+      });
+
+      // Listen for new messages
+      socket.on('new-message', (message) => {
+        displayMessage(message, message.username === username);
+      });
+
+      // Listen for user joined
+      socket.on('user-joined', (data) => {
+        addSystemMessage(`${data.username} joined the room`);
+        updateUsersList(data.users);
+      });
+
+      // Listen for user left
+      socket.on('user-left', (data) => {
+        addSystemMessage(`${data.username} left the room`);
+        updateUsersList(data.users);
+      });
+
+      // Listen for typing
+      socket.on('user-typing', (username) => {
+        const indicator = document.getElementById('typing');
+        indicator.textContent = `${username} is typing...`;
+
+        setTimeout(() => {
+          indicator.textContent = '';
+        }, 1000);
+      });
+
+      function displayMessage(message, isMyMessage) {
+        const div = document.getElementById('messages');
+        const p = document.createElement('p');
+        p.className = 'message' + (isMyMessage ? ' my-message' : '');
+
+        const time = new Date(message.timestamp).toLocaleTimeString();
+        p.innerHTML = `<strong>${message.username}</strong> <small>${time}</small><br>${message.message}`;
+
+        div.appendChild(p);
+        div.scrollTop = div.scrollHeight;
+      }
+
+      function addSystemMessage(text) {
+        const div = document.getElementById('messages');
+        const p = document.createElement('p');
+        p.className = 'message system';
+        p.textContent = text;
+        div.appendChild(p);
+        div.scrollTop = div.scrollHeight;
+      }
+
+      function updateUsersList(users) {
+        document.getElementById('users-list').textContent = users.join(', ');
+      }
+    </script>
+  </body>
+</html>
