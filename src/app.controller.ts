@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 import {
   ReqContext,
@@ -39,5 +39,10 @@ export class AppController {
   @Get('locale')
   getLocale(@Locale() locale: string): string {
     return locale;
+  }
+
+  @Post('add-file')
+  addFile(@Body('filename') filename: string) {
+    return this.appService.addFile(filename);
   }
 }
