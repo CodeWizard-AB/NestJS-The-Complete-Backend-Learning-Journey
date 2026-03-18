@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import {
   ConnectedSocket,
   MessageBody,
@@ -8,13 +8,16 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat.service';
 import { JoinChatDto } from './dto/join-chat.dto';
 import { SendMessgeDto } from './dto/send-message.dto';
+import { WsExceptionFilter } from './exceptions/ws-exception.filter';
 
 @WebSocketGateway({ cors: { origin: '*' } })
+@UseFilters(WsExceptionFilter)
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -80,6 +83,10 @@ export class ChatGateway
     @MessageBody() data: SendMessgeDto,
     @ConnectedSocket() client: Socket,
   ) {
+    if (!data.message.trim()) {
+      throw new WsException('Empty message');
+    }
+
     const userInfo = this.userSockets.get(client.id);
 
     if (!userInfo) {
