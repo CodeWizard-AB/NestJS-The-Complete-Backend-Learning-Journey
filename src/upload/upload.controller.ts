@@ -52,10 +52,6 @@ export class UploadController {
             maxSize: 10 * 1024 * 1024,
             errorMessage: 'File size is too large',
           }),
-          // new FileTypeValidator({
-          //   fileType: '.(jpg|jpeg|png|gif|pdf)',
-          //   errorMessage: 'File type is not allowed',
-          // }),
         ],
       }),
     )
