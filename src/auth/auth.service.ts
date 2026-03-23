@@ -12,6 +12,20 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  async findOrCreateGoogleUser(googleUser: any) {
+    let user = await this.userModel.findOne({ email: googleUser.email });
+
+    if (!user) {
+      user = await this.userModel.create({
+        email: googleUser.email,
+        name: `${googleUser.firstName} ${googleUser.lastName}`,
+        role: 'user',
+      });
+    }
+
+    return user;
+  }
+
   async signUp(data: { email: string; password: string; name: string }) {
     const { email, password, name } = data;
 
@@ -72,7 +86,9 @@ export class AuthService {
     };
   }
 
-  private async generateToken(user: UserDocument) {
+  async generateToken(user: UserDocument) {
+    console.log(user);
+
     const payload = { sub: user._id, email: user.email, role: user.role };
     return await this.jwtService.signAsync(payload, {
       secret: process.env.JWT_SECRET!,

@@ -9,7 +9,7 @@ import { Injectable } from '@nestjs/common';
 import { Post } from 'src/posts/schemas/post.schema';
 import { User, UserDocument } from 'src/users/schemas/user.schema';
 
-enum Action {
+export enum Action {
   Manage = 'manage',
   Create = 'create',
   Read = 'read',
@@ -17,7 +17,6 @@ enum Action {
   Delete = 'delete',
 }
 type Subjects = InferSubjects<typeof User | typeof Post> | 'all';
-
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
 @Injectable()
