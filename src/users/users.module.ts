@@ -12,5 +12,6 @@ import { CaslModule } from 'src/casl/casl.module';
   ],
   controllers: [UsersController],
   providers: [UsersService],
+  exports: [UsersService],
 })
 export class UsersModule {}

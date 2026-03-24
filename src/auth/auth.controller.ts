@@ -6,24 +6,44 @@ import {
   UseGuards,
   Req,
   Res,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
+import { UserDocument } from 'src/users/schemas/user.schema';
+import { AccessTokenGuard } from './guards/access-token.guard';
+import { RefreshTokenGuard } from './guards/refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('signup')
-  signUp(@Body() body: CreateAuthDto) {
-    return this.authService.signUp(body);
+  @Post('register')
+  async signUp(@Body() data: CreateAuthDto) {
+    return await this.authService.register(data);
   }
 
-  @Post('signin')
-  signIn(@Body() body: { email: string; password: string }) {
-    return this.authService.signIn(body);
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() body: CreateAuthDto) {
+    return await this.authService.login(body);
+  }
+
+  @Post('refresh')
+  @UseGuards(RefreshTokenGuard)
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Req() req: Request & { user: UserDocument }) {
+    return await this.authService.refresh(req.user.id, req.user.refreshToken!);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AccessTokenGuard)
+  async logout(@Req() req: Request & { user: UserDocument }) {
+    return await this.authService.logout(req.user.id);
   }
 
   @Get('google')
@@ -33,9 +53,11 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const token = await this.authService.generateToken(req.user as any);
+    const tokens = await this.authService.generateTokens(req.user as any);
 
-    res.redirect(`http://localhost:3000/auth/success?token=${token}`);
+    res.redirect(
+      `http://localhost:3000/auth/success?token=${tokens.accessToken}`,
+    );
   }
 
   @Get('/success')

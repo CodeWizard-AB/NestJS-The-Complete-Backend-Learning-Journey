@@ -9,20 +9,40 @@ import { User, UserDocument } from './schemas/user.schema';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
+  async recordFailedLogin(id: string) {
+    return await this.userModel.updateOne(
+      { _id: id },
+      { $inc: { failedLoginAttempts: 1 } },
+    );
+  }
+
+  async resetFailedLogin(id: string) {
+    return await this.userModel.updateOne(
+      { _id: id },
+      { $set: { failedLoginAttempts: 0 } },
+    );
+  }
+
   create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    return this.userModel.create(createUserDto);
   }
 
   async findAll() {
     return await this.userModel.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findByEmail(email: string) {
+    return await this.userModel.findOne({ email });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findById(id: string) {
+    return await this.userModel.findById(id);
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    return await this.userModel.findByIdAndUpdate(id, updateUserDto, {
+      returnDocument: 'after',
+    });
   }
 
   remove(id: number) {
