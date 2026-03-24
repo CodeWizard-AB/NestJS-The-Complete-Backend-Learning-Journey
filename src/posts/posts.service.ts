@@ -11,23 +11,25 @@ export class PostsService {
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
   ) {}
 
-  async create(createPostDto: PostDocument) {
+  async create(createPostDto: Post) {
     return await this.postModel.create(createPostDto);
   }
 
-  findAll() {
-    return `This action returns all posts`;
+  async findAll() {
+    return await this.postModel.find();
   }
 
   async findOne(id: string) {
     return await this.postModel.findById(id);
   }
 
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
+  async update(id: string, updatePostDto: UpdatePostDto) {
+    return await this.postModel.findByIdAndUpdate(id, updatePostDto, {
+      returnDocument: 'after',
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} post`;
+  async remove(id: string) {
+    return await this.postModel.findByIdAndDelete(id);
   }
 }

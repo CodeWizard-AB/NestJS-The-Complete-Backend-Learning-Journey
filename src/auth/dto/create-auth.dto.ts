@@ -3,4 +3,6 @@ export class CreateAuthDto {
   password: string;
   name: string;
   role?: string;
+  isEmailVerified: boolean;
+  country: string;
 }

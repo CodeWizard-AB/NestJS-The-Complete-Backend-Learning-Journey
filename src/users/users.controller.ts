@@ -30,8 +30,8 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
+  @UseGuards(JwtAuthGuard)
   findMe(@Req() req: Request) {
     return req.user;
   }

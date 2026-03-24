@@ -4,6 +4,7 @@ import { User, UserDocument } from 'src/users/schemas/user.schema';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -26,8 +27,8 @@ export class AuthService {
     return user;
   }
 
-  async signUp(data: { email: string; password: string; name: string }) {
-    const { email, password, name } = data;
+  async signUp(data: CreateAuthDto) {
+    const { email, password, name, isEmailVerified, country } = data;
 
     const existingUser = await this.userModel.findOne({ email });
 
@@ -41,6 +42,8 @@ export class AuthService {
       email,
       password: hashedPassword,
       name,
+      isEmailVerified,
+      country,
     });
 
     const token = await this.generateToken(newUser);

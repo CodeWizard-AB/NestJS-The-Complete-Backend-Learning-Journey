@@ -12,12 +12,18 @@ import {
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Action, CaslAbilityFactory } from 'src/casl/casl-ability.factory';
+import {
+  Action,
+  AppAbility,
+  CaslAbilityFactory,
+} from 'src/casl/casl-ability.factory';
 import { CheckPolicies } from 'src/common/decorators/check-policies.decorator';
 import { Post as PostEntity } from './schemas/post.schema';
 import { type Request } from 'express';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { PoliciesGuard } from 'src/common/guards/policies.guard';
+import { ClaimRequired } from 'src/common/decorators/claim.decorator';
+import { ClaimGuard } from 'src/common/guards/claim.guard';
 
 @Controller('posts')
 @UseGuards(JwtAuthGuard, PoliciesGuard)
@@ -28,15 +34,31 @@ export class PostsController {
   ) {}
 
   @Post()
-  @CheckPolicies((ability) => ability.can(Action.Create, PostEntity))
-  async create(@Req() req: Request, @Body() createPostDto: CreatePostDto) {
-    // return await this.postsService.create();
+  // @CheckPolicies((ability) => ability.can(Action.Create, PostEntity))
+  async create(
+    @Req() req: Request & { user: any },
+    @Body() createPostDto: CreatePostDto,
+  ) {
+    return await this.postsService.create({
+      ...createPostDto,
+      userId: req.user.id as string,
+    });
   }
 
   @Get()
-  @CheckPolicies((ability) => ability.can(Action.Read, PostEntity))
+  // @CheckPolicies((ability) => ability.can(Action.Read, PostEntity))
   findAll() {
     return this.postsService.findAll();
+  }
+
+  @Get('country')
+  @UseGuards(JwtAuthGuard, ClaimGuard)
+  @ClaimRequired(
+    { key: 'country', value: 'BD' },
+    { key: 'isEmailVerified', value: true },
+  )
+  getCountryContent() {
+    return 'country content';
   }
 
   @Get(':id')
@@ -45,18 +67,16 @@ export class PostsController {
   }
 
   @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updatePostDto: UpdatePostDto,
-    @Req() req: Request,
-  ) {
-    const post = this.postsService.findOne(id);
-    const ability = this.caslAbilityFactory.createForUser(req.user as any);
-    return this.postsService.update(+id, updatePostDto);
+  @CheckPolicies((ability: AppAbility) =>
+    ability.can(Action.Update, PostEntity),
+  )
+  async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+    return await this.postsService.update(id, updatePostDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postsService.remove(+id);
+  @CheckPolicies((ability) => ability.can(Action.Delete, PostEntity))
+  remove(@Param('id') id: string, @Req() req: Request & { user: any }) {
+    return this.postsService.remove(id);
   }
 }

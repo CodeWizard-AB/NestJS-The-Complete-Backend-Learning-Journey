@@ -6,10 +6,14 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { CaslAbilityFactory } from 'src/casl/casl-ability.factory';
+import { AppAbility, CaslAbilityFactory } from 'src/casl/casl-ability.factory';
 import { CHECK_POLICIES_KEY } from '../decorators/check-policies.decorator';
 
-export type PolicyHandler = (ability: any) => boolean;
+export interface IPolicyHandler {
+  handle(ability: AppAbility): boolean;
+}
+export type PolicyHandlerCb = (ability: AppAbility) => boolean;
+export type PolicyHandler = PolicyHandlerCb | IPolicyHandler;
 
 @Injectable()
 export class PoliciesGuard implements CanActivate {
@@ -31,8 +35,11 @@ export class PoliciesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
     const ability = this.caslAbilityFactory.createForUser(user);
+
     const allowed = policies.every((handler: PolicyHandler) =>
-      handler(ability),
+      typeof handler === 'function'
+        ? handler(ability)
+        : handler.handle(ability),
     );
 
     if (!allowed) {
